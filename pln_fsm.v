@@ -1,6 +1,8 @@
 `define	mul 42 
 `define div 47
-`define equ 61
+`define equ 61 
+`define add 43
+`define sub 45
 
 					   
 
@@ -8,9 +10,9 @@ module pln_fsm (
 	
 	input  wire                    CLK,       	  
 	input  wire        			   RST, 
-	input  wire [8-1 :0] 	   DATA_IN,
+	input  wire [8-1:0] 	   DATA_IN,
 	
-	output [8-1:0]			  DATA_OUT 
+	output reg  [8-1:0]			  DATA_OUT 
 	
 	);
 	
@@ -31,12 +33,35 @@ reg        push_stb;
 reg [31:0] push_dat;	
 
 wire [31:0] pop_dat;
-reg         pop_stb;	 
+reg         pop_stb;
 
 
-always @(posedge clk, posedge reset)
+function int PREC(input [8-1:0] a); 
+
+	begin
+	
+		if( `mul == a || `div == a)
+			return 1;
+		else
+			return 0;
+	
+	end
+endfunction	   
+
+function int isOp(input [8-1:0] a);	
+	begin	
+		if( `mul == a || `add == a || `div == a || `sub == a)
+			return 1;
+		else
+			return 0;
+	
+	end
+endfunction
+
+
+always @(posedge CLK, posedge RST)
 begin
-    if(reset) // go to state zero if rese
+    if(RST) // go to state zero if rese
         begin
         state_reg <= READ_T;
         end
@@ -49,41 +74,43 @@ end
 
 always @(state_reg, DATA_IN)
 begin
-   
-    state_next = state_reg; // 
-    
-    
+       
     case(state_reg)
         READ_T:
 			begin // 
             	if( isOp(DATA_IN) )
 					begin// 
-                		state_next = READ_S ; 
-						pop_stb =  '1';
+                		state_next <= READ_S ; 
+						pop_stb <=  1;
 					end	// .	
 				else if(DATA_IN != `equ )
-					state_next = PUSH_T
-					
+						state_next <= PUSH_T;
+				else
+						state_next <= READ_S;
+								
 			end		
         READ_S:
             begin
                  // .
-                if(PREC(pop_dat) >= PREC(DATA_IN)) //  , 
-                    state_next = POP_S ; // go to state one,
+                if(PREC(pop_dat) >= PREC(DATA_IN))
+				  begin//   
+                    state_next <= POP_S;
+					pop_stb <= 1;
+				  end	
                 else
-                    state_next = PUSH_T ; // else go to state zero.
+                    state_next <= PUSH_T ; //
             end
         PUSH_T:
 			begin
-              DATA_OUT = DATA_IN;
+              DATA_OUT <= DATA_IN;			  
+              state_next <= READ_T;
 			  
-              state_next = READ_T ;
-			 end// then go to state zero.  
+			 end//
 		POP_S:
 			begin
-			  DATA_OUT = pop_dat ;
-			  state_next = READ_S ;
-			 end 
+			  DATA_OUT <= pop_dat ;
+			  state_next <= READ_S ;		 
+		end 
     endcase
 end
 
@@ -103,23 +130,4 @@ stack s1
 // -- Enter your statements here -- //	 
 
 
-function int PREC(input [8-1:0] a)
-	begin	
-		if( `mul == 42 || `add == 47)
-			return 1;
-		else
-			return 0;
-	
-	end
-endfunction	   
-
-function int isOp(input [8-1:0] a)
-	begin	
-		if( `mul == a || `add == a || `div == a || `sub == a)
-			return 1;
-		else
-			return 0;
-	
-	end
-endfunction
 endmodule
