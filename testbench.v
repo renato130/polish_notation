@@ -4,16 +4,12 @@ initial CLK  <= 0;
 always #50  CLK <= ~CLK;
 		
 reg RST;
-int char_r;
+reg [8-1 :0] DATA_IN;
+wire	[8-1 :0] DATA_OUT;
 
-int fp;
+int fp,fout;
 
-initial 
-begin
-	RST <= 0;
-	RST <= #100 1;
-	RST <= #500 0;
-end	  	
+
 
 reg        push_stb;
 reg [31:0] push_dat;	
@@ -22,20 +18,45 @@ wire [31:0] pop_dat;
 reg         pop_stb;
 
 initial 
+begin 
+ 	RST <= 0;
+	#100 ; 
+	RST <=  1;	 
+		#100 ;
+	RST <=  0;
+	#10
+	
+	
+	fp = $fopen("input.txt","r");  
+	fout = $fopen("out_pln.txt","w");
+
+		while(!$feof(fp))
+		begin
+			DATA_IN = $fgetc(fp);
+			@ ( posedge(CLK));	
+			
+		end	
+	
+	
+	#100;
+	
+	
+	
+end	 
+
+
+initial
+forever
 begin
+	@( posedge(CLK) && DATA_OUT )
 	
+	$fwrite(fout,DATA_OUT);
 	
-	fp = $fopen("input.txt","w");
-	$fwrite(fp,"1+5*5);
-	
-	
-	#1000;
-	
-	
- 
-	
-	$fclose(fp);  
-end	  
+
+end		
+
+
+
    
 pln_fsm p1 
 (
@@ -46,3 +67,4 @@ pln_fsm p1
 );              
  
 endmodule
+
